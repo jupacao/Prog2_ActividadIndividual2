@@ -151,36 +151,44 @@ def capturar_datos(lista_pacientes):
 
     fecha_actual = datetime.now().date()
     festivos_colombia = holidays.CO(language='es') 
+    
     while True:
-        fecha_cita = input("Fecha de la cita (DD/MM/AAAA): ")
-        try:
-            fecha_obj = datetime.strptime(fecha_cita, "%d/%m/%Y").date()
-            if fecha_obj < fecha_actual:
-                print("Error: La fecha de la cita no puede ser en el pasado.")
-                continue
-            elif fecha_obj.weekday() == 6:
-                print("Error: El consultorio no atiende los domingos.")
-                continue
-            elif fecha_obj in festivos_colombia:
-                nombre_festivo = festivos_colombia.get(fecha_obj)
-                print(f"Error: Festivo nacional ({nombre_festivo}). Seleccione otro día.")
-                continue
-        except ValueError:
-            print("Error: Ingrese una fecha válida (DD/MM/AAAA).")
-            continue
-            
-        hora_cita = input("Hora de la cita (Formato 24h, ej. 14:30): ")
-        try:
-            datetime.strptime(hora_cita, "%H:%M")
-        except ValueError:
-            print("Error: Formato de hora inválido. Use HH:MM.")
-            continue
-            
+        
+        while True:
+            fecha_cita = input("Fecha de la cita (DD/MM/AAAA): ")
+            try:
+                fecha_obj = datetime.strptime(fecha_cita, "%d/%m/%Y").date()
+                if fecha_obj < fecha_actual:
+                    print("Error: La fecha de la cita no puede ser en el pasado.")
+                elif fecha_obj.weekday() == 6:
+                    print("Error: El consultorio no atiende los domingos.")
+                elif fecha_obj in festivos_colombia:
+                    nombre_festivo = festivos_colombia.get(fecha_obj)
+                    print(f"Error: Festivo nacional ({nombre_festivo}). Seleccione otro día.")
+                else:
+                    break
+            except ValueError:
+                print("Error: Ingrese una fecha válida (DD/MM/AAAA).")
+                
+        while True:
+            hora_cita = input("Hora de la cita (Formato 24h, ej. 14:30): ")
+            try:
+                hora_obj = datetime.strptime(hora_cita, "%H:%M").time()
+                hora_apertura = datetime.strptime("07:00", "%H:%M").time()
+                hora_cierre = datetime.strptime("20:00", "%H:%M").time()
+                
+                if hora_obj < hora_apertura or hora_obj > hora_cierre:
+                    print("Error: El horario de atención es únicamente de 07:00 a 20:00. Seleccione otra hora")
+                else:
+                    break
+            except ValueError:
+                print("Error: Formato de hora inválido. Use HH:MM en formato de 24 horas.")
+                
         colision = False
         for p in lista_pacientes:
             if p.fecha_cita == fecha_cita and p.hora_cita == hora_cita:
-                print(f">> ALERTA: Ya existe un paciente agendado el {fecha_cita} a las {hora_cita}.")
-                print(">> Por favor, seleccione otro horario.")
+                print(f"Ya existe un paciente agendado el {fecha_cita} a las {hora_cita}.")
+                print("Por favor, seleccione otro horario dela agenda.")
                 colision = True
                 break
                 
