@@ -13,12 +13,15 @@ class ColaPrioridad:
     def encolar(self, cita):
         fecha_orden = cita.obtener_fecha_obj()
         
-        heapq.heappush(self.heap, (fecha_orden, self.consecutivo, cita))
+        edad = int(cita.edad)
+        vulnerabilidad = 1 if edad >= 65 or edad <= 12 else 2
+        
+        heapq.heappush(self.heap, (fecha_orden, vulnerabilidad, self.consecutivo, cita))
         self.consecutivo += 1
 
     def desencolar(self):
         if not self.esta_vacia():
-            return heapq.heappop(self.heap)[2]
+            return heapq.heappop(self.heap)[3]
         return None
 
     def esta_vacia(self):

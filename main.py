@@ -6,17 +6,20 @@
 from datetime import datetime
 import holidays
 from models.cola_prioridad import ColaPrioridad
+from models.cola_atencion import ColaAtencion
 
 class CitaOdontologica:
-    def __init__(self, cedula, nombre, apellido, telefono, tipo_cliente, tipo_atencion, prioridad, fecha_cita):
+    def __init__(self, cedula, nombre, apellido, edad, telefono, tipo_cliente, tipo_atencion, prioridad, fecha_cita, hora_cita):
         self.cedula = cedula
         self.nombre = nombre
         self.apellido = apellido
+        self.edad = edad
         self.telefono = telefono
         self.tipo_cliente = tipo_cliente
         self.tipo_atencion = tipo_atencion
         self.prioridad = prioridad
         self.fecha_cita = fecha_cita
+        self.hora_cita = hora_cita
         
     def obtener_fecha_obj(self):
         return datetime.strptime(self.fecha_cita, "%d/%m/%Y").date()
@@ -46,9 +49,10 @@ def capturar_datos(lista_pacientes):
             break
 
     if paciente_previo:
-        print(f"Ya se tienen datos del paciente: {paciente_previo.nombre} {paciente_previo.apellido}")
+        print(f"Ya se tienen datos del paciente: {paciente_previo.nombre} {paciente_previo.apellido} (Edad: {paciente_previo.edad})")
         nombre = paciente_previo.nombre
         apellido = paciente_previo.apellido
+        edad = paciente_previo.edad
 
         while True:
             cambiar_tel = input(f"Teléfono actual: {paciente_previo.telefono} ¿Desea actualizarlo? (S/N): ").lower()
@@ -84,7 +88,7 @@ def capturar_datos(lista_pacientes):
                 if opcion_c in tipos_c:
                     tipo_cliente = tipos_c[opcion_c]
                     break
-                print("Error: Seleccione una opción válida (1 - Particular, 2 - EPS, 3 - Prepagada).")
+                print("Error: Seleccione una opción válida.")
         else:
             tipo_cliente = paciente_previo.tipo_cliente
             
@@ -100,6 +104,12 @@ def capturar_datos(lista_pacientes):
             if apellido.replace(" ", "").isalpha():
                 break
             print("Error: El apellido no puede contener números.")
+            
+        while True:
+            edad = input("Edad: ")
+            if edad.isdigit() and 0 <= int(edad) <= 120:
+                break
+            print("Error: Ingrese una edad válida (número).")
         
         while True:
             telefono = input("Teléfono: ")
@@ -119,7 +129,7 @@ def capturar_datos(lista_pacientes):
             if opcion_c in tipos_c:
                 tipo_cliente = tipos_c[opcion_c]
                 break
-            print("Error: Seleccione una opción válida (1 - Particular, 2 - EPS, 3 - Prepagada).")
+            print("Error: Seleccione una opción válida.")
 
     print("Tipo de Atención (1 - Limpieza, 2 - Calzas, 3 - Extracción, 4 - Diagnóstico)")
     tipos_a = {"1": "Limpieza", "2": "Calzas", "3": "Extracción", "4": "Diagnóstico"}
@@ -128,7 +138,7 @@ def capturar_datos(lista_pacientes):
         if opcion_a in tipos_a:
             tipo_atencion = tipos_a[opcion_a]
             break
-        print("Error: Seleccione una opción válida (1 - Limpieza, 2 - Calzas, 3 - Extracción, 4 - Diagnóstico).")
+        print("Error: Seleccione una opción válida.")
         
     print("Prioridad de Atención (1 - Normal, 2 - Urgente)")
     tipos_p = {"1": "Normal", "2": "Urgente"}
@@ -137,7 +147,7 @@ def capturar_datos(lista_pacientes):
         if opcion_p in tipos_p:
             prioridad = tipos_p[opcion_p]
             break
-        print("Error: Seleccione una opción válida (1 - Normal, 2 - Urgente).")
+        print("Error: Seleccione una opción válida.")
 
     fecha_actual = datetime.now().date()
     festivos_colombia = holidays.CO(language='es') 
@@ -146,18 +156,38 @@ def capturar_datos(lista_pacientes):
         try:
             fecha_obj = datetime.strptime(fecha_cita, "%d/%m/%Y").date()
             if fecha_obj < fecha_actual:
-                print("Error: La fecha de la cita no puede ser anterior al día de hoy.")
+                print("Error: La fecha de la cita no puede ser en el pasado.")
+                continue
             elif fecha_obj.weekday() == 6:
-                print("Error: El consultorio no atiende los domingos. Por favor seleccione otro día.")
+                print("Error: El consultorio no atiende los domingos.")
+                continue
             elif fecha_obj in festivos_colombia:
                 nombre_festivo = festivos_colombia.get(fecha_obj)
-                print(f"Error: El consultorio no atiende en días festivos ({nombre_festivo}). Por favor seleccione otro día.")
-            else:
-                break
+                print(f"Error: Festivo nacional ({nombre_festivo}). Seleccione otro día.")
+                continue
         except ValueError:
-            print("Error: Ingrese una fecha válida usando el formato DD/MM/AAAA.")
+            print("Error: Ingrese una fecha válida (DD/MM/AAAA).")
+            continue
+            
+        hora_cita = input("Hora de la cita (Formato 24h, ej. 14:30): ")
+        try:
+            datetime.strptime(hora_cita, "%H:%M")
+        except ValueError:
+            print("Error: Formato de hora inválido. Use HH:MM.")
+            continue
+            
+        colision = False
+        for p in lista_pacientes:
+            if p.fecha_cita == fecha_cita and p.hora_cita == hora_cita:
+                print(f">> ALERTA: Ya existe un paciente agendado el {fecha_cita} a las {hora_cita}.")
+                print(">> Por favor, seleccione otro horario.")
+                colision = True
+                break
+                
+        if not colision:
+            break
 
-    return CitaOdontologica(cedula, nombre, apellido, telefono, tipo_cliente, tipo_atencion, prioridad, fecha_cita)
+    return CitaOdontologica(cedula, nombre, apellido, edad, telefono, tipo_cliente, tipo_atencion, prioridad, fecha_cita, hora_cita)
 
 def main():
     lista_pacientes = []
@@ -170,13 +200,30 @@ def main():
             continuar = input("\n¿Desea ingresar otro paciente? (S/N): ").lower()
             if continuar in ["s", "n"]:
                 break
-            print("Error: Escriba 'S' para Sí o 'N' para No.")
+            print("Error: Escriba 'S' o 'N'.")
 
-    print("\n" + "="*60)
-    print("INFORME MÉDICO: LISTA DE PACIENTES PARA EXTRACCIONES URGENTES")
+    print("\n" + "="*65)
+    print("INFORME 1: Agenda diaria")
+    print("Atención de todos los pacientes en estricto orden de agenda")
+    print("="*65)
+    
+    cola_agenda = ColaAtencion()
+    
+    for paciente in lista_pacientes:
+        cola_agenda.encolar(paciente)
+        
+    turno_general = 1
+    while not cola_agenda.esta_vacia():
+        paciente_actual = cola_agenda.desencolar()
+        print(f"Turno General #{turno_general}: {paciente_actual.nombre} {paciente_actual.apellido}")
+        print(f"  Tratamiento: {paciente_actual.tipo_atencion} | Fecha: {paciente_actual.fecha_cita} | Hora: {paciente_actual.hora_cita}")
+        turno_general += 1
+
+    print("\n" + "="*65)
+    print("INFORME 2: Plan de contingencia (Extracciones urgentes)")
     print("Filtro: Solo Extracciones + Urgentes")
-    print("Orden: 1° Fecha, 2° Orden de llegada")
-    print("="*60)
+    print("Orden: 1° Fecha, 2° Población Vulnerable, 3° Llegada")
+    print("="*65)
     
     triage = ColaPrioridad()
     
@@ -188,16 +235,19 @@ def main():
     if triage.esta_vacia():
          print("No hay pacientes urgentes para extracción en este momento.")
     else:
-        turno = 1
+        turno_urgencia = 1
         while not triage.esta_vacia():
             paciente_actual = triage.desencolar()
             
-            print(f"Llamado #{turno} [🔴 URGENCIA] : {paciente_actual.nombre} {paciente_actual.apellido}")
+            edad = int(paciente_actual.edad)
+            etiqueta_demo = "[⚠️ VULNERABLE]" if edad >= 65 or edad <= 12 else "[👤 ESTÁNDAR]"
+            
+            print(f"Llamado #{turno_urgencia} [🔴 URGENCIA] {etiqueta_demo} : {paciente_actual.nombre} {paciente_actual.apellido}")
             print(f"  Cédula: {paciente_actual.cedula}")
-            print(f"  Tratamiento: {paciente_actual.tipo_atencion}")
-            print(f"  Fecha asignada: {paciente_actual.fecha_cita}")
-            print("-" * 60)
-            turno += 1
+            print(f"  Edad: ({edad} años)")
+            print(f"  Asignación: {paciente_actual.fecha_cita} a las {paciente_actual.hora_cita}")
+            print("-" * 65)
+            turno_urgencia += 1
 
 if __name__ == "__main__":
     main()
