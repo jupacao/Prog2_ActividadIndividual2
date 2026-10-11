@@ -11,14 +11,13 @@ class ColaPrioridad:
         self.consecutivo = 0
 
     def encolar(self, cita):
-        peso = 1 if cita.prioridad == "Urgente" else 2
+        fecha_orden = cita.obtener_fecha_obj()
         
-        heapq.heappush(self.heap, (peso, self.consecutivo, cita))
+        heapq.heappush(self.heap, (fecha_orden, self.consecutivo, cita))
         self.consecutivo += 1
 
     def desencolar(self):
         if not self.esta_vacia():
-            # Extraemos la tupla (peso, consecutivo, objeto_cita) y retornamos solo el objeto [índice 2]
             return heapq.heappop(self.heap)[2]
         return None
 

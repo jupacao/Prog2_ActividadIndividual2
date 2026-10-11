@@ -173,27 +173,31 @@ def main():
             print("Error: Escriba 'S' para Sí o 'N' para No.")
 
     print("\n" + "="*60)
-    print("--- LISTA DE PACIENTES EN ORDEN DE ATENCIÓN ---")
-    print("Orden: 1° Urgencias (por llegada), 2° Normales (por llegada)")
+    print("INFORME MÉDICO: LISTA DE PACIENTES PARA EXTRACCIONES URGENTES")
+    print("Filtro: Solo Extracciones + Urgentes")
+    print("Orden: 1° Fecha, 2° Orden de llegada")
     print("="*60)
     
     triage = ColaPrioridad()
     
-    for paciente in lista_pacientes:
+    pacientes_filtrados = [p for p in lista_pacientes if p.tipo_atencion == "Extracción" and p.prioridad == "Urgente"]
+    
+    for paciente in pacientes_filtrados:
         triage.encolar(paciente)
         
-    turno = 1
-    while not triage.esta_vacia():
-        paciente_actual = triage.desencolar()
-        
-        etiqueta = "[🔴 URGENCIA]" if paciente_actual.prioridad == "Urgente" else "[🟢 NORMAL]"
-        
-        print(f"Llamado #{turno} {etiqueta} : {paciente_actual.nombre} {paciente_actual.apellido}")
-        print(f"  Cédula: {paciente_actual.cedula}")
-        print(f"  Tratamiento: {paciente_actual.tipo_atencion}")
-        print(f"  Fecha asignada: {paciente_actual.fecha_cita}")
-        print("-" * 60)
-        turno += 1
+    if triage.esta_vacia():
+         print("No hay pacientes urgentes para extracción en este momento.")
+    else:
+        turno = 1
+        while not triage.esta_vacia():
+            paciente_actual = triage.desencolar()
+            
+            print(f"Llamado #{turno} [🔴 URGENCIA] : {paciente_actual.nombre} {paciente_actual.apellido}")
+            print(f"  Cédula: {paciente_actual.cedula}")
+            print(f"  Tratamiento: {paciente_actual.tipo_atencion}")
+            print(f"  Fecha asignada: {paciente_actual.fecha_cita}")
+            print("-" * 60)
+            turno += 1
 
 if __name__ == "__main__":
     main()
