@@ -5,8 +5,7 @@
 
 from datetime import datetime
 import holidays
-from models.cola_atencion import ColaAtencion
-from models.pila_contingencia import PilaContingencia
+from models.cola_prioridad import ColaPrioridad
 
 class CitaOdontologica:
     def __init__(self, cedula, nombre, apellido, telefono, tipo_cliente, tipo_atencion, prioridad, fecha_cita):
@@ -168,49 +167,33 @@ def main():
         cita = capturar_datos(lista_pacientes)
         lista_pacientes.append(cita)
         while True:
-            continuar = input("\n¿Desea ingresar otro cliente? (S/N): ").lower()
+            continuar = input("\n¿Desea ingresar otro paciente? (S/N): ").lower()
             if continuar in ["s", "n"]:
                 break
             print("Error: Escriba 'S' para Sí o 'N' para No.")
 
-    print("\n" + "="*50)
-    print("--- AGENDA DIARIA: COLA DE ATENCIÓN (FIFO) ---")
-    print("Orden estricto de llegada al consultorio")
-    print("="*50)
+    print("\n" + "="*60)
+    print("--- LISTA DE PACIENTES EN ORDEN DE ATENCIÓN ---")
+    print("Orden: 1° Urgencias (por llegada), 2° Normales (por llegada)")
+    print("="*60)
     
-    cola_agenda = ColaAtencion()
+    triage = ColaPrioridad()
     
     for paciente in lista_pacientes:
-        cola_agenda.encolar(paciente)
+        triage.encolar(paciente)
         
     turno = 1
-    while not cola_agenda.esta_vacia():
-        paciente_actual = cola_agenda.desencolar()
-        print(f"Atendiendo turno {turno}: {paciente_actual.nombre} {paciente_actual.apellido} - Motivo: {paciente_actual.tipo_atencion}")
-        turno += 1
-
-    print("\n" + "="*50)
-    print("--- PLAN DE CONTINGENCIA: PILA URGENTE (LIFO) ---")
-    print("Pacientes: Extracción + Urgentes (Llamado por fecha más cercana)")
-    print("="*50)
-    
-    pila_urgentes = PilaContingencia()
-    
-    citas_filtradas = [p for p in lista_pacientes if p.tipo_atencion == "Extracción" and p.prioridad == "Urgente"]
-    citas_filtradas.sort(key=lambda x: x.obtener_fecha_obj(), reverse=True)
-    
-    for paciente in citas_filtradas:
-        pila_urgentes.apilar(paciente)
+    while not triage.esta_vacia():
+        paciente_actual = triage.desencolar()
         
-    if pila_urgentes.esta_vacia():
-        print("No hay pacientes con extracciones urgentes pendientes.")
-    else:
-        while not pila_urgentes.esta_vacia():
-            urgencia = pila_urgentes.desapilar()
-            print(f"¡Llamado prioritario!: {urgencia.nombre} {urgencia.apellido}")
-            print(f"Teléfono: {urgencia.telefono} | Cédula: {urgencia.cedula}")
-            print(f"Fecha programada: {urgencia.fecha_cita}")
-            print("-" * 40)
+        etiqueta = "[🔴 URGENCIA]" if paciente_actual.prioridad == "Urgente" else "[🟢 NORMAL]"
+        
+        print(f"Llamado #{turno} {etiqueta} : {paciente_actual.nombre} {paciente_actual.apellido}")
+        print(f"  Cédula: {paciente_actual.cedula}")
+        print(f"  Tratamiento: {paciente_actual.tipo_atencion}")
+        print(f"  Fecha asignada: {paciente_actual.fecha_cita}")
+        print("-" * 60)
+        turno += 1
 
 if __name__ == "__main__":
     main()
